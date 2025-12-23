@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery & System Guardian | macOS System Monitor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-green: #00ff9d;
+            --electric-green: #00ff6a;
+            --lime-green: #a4ff00;
+            --dark-bg: #111911; /* Светлее фон */
+            --darker-bg: #0a0f0a;
+            --card-bg: rgba(30, 40, 30, 0.95); /* Светлее карточки */
+            --text-light: #ffffff;
+            --text-gray: #c0c0c0; /* Светлее серый текст */
+            --gradient-primary: linear-gradient(135deg, var(--neon-green), var(--electric-green), var(--lime-green));
+            --gradient-secondary: linear-gradient(135deg, #00ff9d, #00cc6a, #00994d);
+            --gradient-crypto: linear-gradient(135deg, #f6851b, #e2761b, #c0c0c0);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-light);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+        
+        /* Легкий фоновый градиент для глубины */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(0, 255, 157, 0.05) 0%, transparent 70%),
+                radial-gradient(circle at 80% 20%, rgba(164, 255, 0, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 800;
+            line-height: 1.2;
+        }
+        
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 30px;
+        }
+        
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(20, 25, 20, 0.95);
+            backdrop-filter: blur(15px);
+            border-bottom: 2px solid rgba(0, 255, 157, 0.25);
+            box-shadow: 0 10px 30px rgba(0, 255, 157, 0.15);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 900;
+            font-size: 1.6rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .logo i {
+            font-size: 2rem;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 35px;
+            align-items: center;
+        }
+        
+        .nav-links .toNeon{
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .nav-links .toNeon:hover {
+            color: var(--neon-green);
+        }
+        
+        .nav-links .toNeon::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+        
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+        
+        .download-btn {
+            background: var(--gradient-primary);
+            color: var(--text-light);
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 255, 157, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .download-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 255, 157, 0.6);
+        }
+
+        .donate-btn {
+            /* background: var(--gradient-primary); */
+            color: #000;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(246, 133, 27, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+
+                         display: inline-block;
+            background: var(--gradient-crypto);
+            /*color: #000;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 50px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            font-size: 1.3rem; */
+            
+        }
+        
+        .donate-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(246, 133, 27, 0.6);
+        }
+        
+
+        .donate-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--gradient-crypto);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+        /* Header */
+        header {
+            padding: 180px 0 120px;
+            display: flex;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 70% 30%, rgba(0, 255, 157, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 30% 70%, rgba(164, 255, 0, 0.05) 0%, transparent 50%);
+            z-index: -1;
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 80px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .header-text {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .tag {
+            display: inline-block;
+            background: var(--gradient-primary);
+            color: #000;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+            animation: pulse 2s infinite;
+            box-shadow: 0 5px 15px rgba(0, 255, 157, 0.3);
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 157, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 255, 157, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 157, 0); }
+        }
+        
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 25px;
+            background: linear-gradient(to right, #fff, var(--neon-green), var(--lime-green));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            line-height: 1.1;
+        }
+        
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-gray);
+            margin-bottom: 40px;
+            max-width: 550px;
+            font-weight: 400;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .secondary-btn {
+            background: transparent;
+            color: var(--neon-green);
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 2px solid var(--neon-green);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .secondary-btn:hover {
+            background: rgba(0, 255, 157, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .header-image {
+            flex: 1;
+            min-width: 350px;
+            position: relative;
+        }
+        
+        .app-screenshot {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+            border: 3px solid rgba(0, 255, 157, 0.3);
+            transform: perspective(1000px) rotateY(-10deg) rotateX(5deg);
+            transition: transform 0.7s ease;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .app-screenshot:hover {
+            transform: perspective(1000px) rotateY(0) rotateX(0);
+        }
+        
+        .screenshot-frame {
+            position: relative;
+            padding: 20px;
+            background: rgba(25, 35, 25, 0.9);
+            border-radius: 25px;
+            box-shadow: 0 30px 70px rgba(0, 255, 157, 0.15);
+        }
+        
+        .floating-icons {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .floating-icon {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 255, 157, 0.3);
+            animation: float 6s ease-in-out infinite;
+            font-weight: bold;
+        }
+        
+        .floating-icon:nth-child(1) {
+            top: -25px;
+            left: -25px;
+            animation-delay: 0s;
+        }
+        
+        .floating-icon:nth-child(2) {
+            top: 30%;
+            right: -25px;
+            animation-delay: 1s;
+        }
+        
+        .floating-icon:nth-child(3) {
+            bottom: -25px;
+            left: 30%;
+            animation-delay: 2s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        
+        /* Features Section - Светлый фон */
+        .section-title {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 25px;
+            background: linear-gradient(to right, #fff, var(--neon-green), var(--lime-green));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-gray);
+            max-width: 750px;
+            margin: 0 auto 70px;
+            font-size: 1.2rem;
+        }
+        
+        section {
+            padding: 120px 0;
+            position: relative;
+        }
+        
+        /* Альтернативный фон для секций */
+        .light-section {
+            background: rgba(20, 25, 20, 0.7);
+            border-radius: 40px;
+            margin: 40px 0;
+            padding: 80px 0;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 35px;
+            margin-top: 60px;
+        }
+        
+        .feature-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 35px;
+            transition: all 0.4s ease;
+            border: 1px solid rgba(0, 255, 157, 0.15);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s ease;
+        }
+        
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 20px 40px rgba(0, 255, 157, 0.2);
+            border-color: rgba(0, 255, 157, 0.3);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 25px;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .feature-title {
+            font-size: 1.7rem;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        
+        .feature-desc {
+            color: var(--text-gray);
+            font-size: 1.05rem;
+        }
+        
+        /* Installation Section */
+        .installation-steps {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .step {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 35px;
+            border-left: 6px solid;
+            border-image: var(--gradient-primary) 1;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .step:hover {
+            transform: translateX(15px);
+            box-shadow: 0 15px 35px rgba(0, 255, 157, 0.15);
+        }
+        
+        .step-number {
+            display: inline-block;
+            background: var(--gradient-primary);
+            color: #000;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 50px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            box-shadow: 0 5px 15px rgba(0, 255, 157, 0.3);
+        }
+        
+        .step-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        
+        .code-block {
+            background: rgba(15, 20, 15, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: auto;
+            position: relative;
+        }
+        
+/* Исправь отступы от ТЕРМИНАЛ */
+        .code-block::before {
+            content: 'TERMINAL';
+            position: absolute;
+
+            top: -5.5px;
+            left: 20px;
+            background: var(--gradient-primary);
+            color: #000;
+            padding: 3px 15px;
+            margin-top: 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        
+        .code-block code {
+            color: var(--neon-green);
+            font-size: 1rem;
+            line-height: 1.8;
+            
+        }
+        
+        /* Stats Section */
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 35px;
+            margin-top: 70px;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            min-width: 220px;
+            border: 1px solid rgba(0, 255, 157, 0.15);
+            transition: all 0.4s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-15px);
+            border-color: var(--neon-green);
+            box-shadow: 0 15px 30px rgba(0, 255, 157, 0.2);
+        }
+        
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            color: var(--text-gray);
+            font-size: 1.2rem;
+        }
+        
+        /* Download Section - Светлый акцентный блок */
+        .download-section {
+            text-align: center;
+            padding: 100px 0;
+            background: rgba(25, 35, 25, 0.9);
+            border-radius: 40px;
+            margin: 60px 0;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(0, 255, 157, 0.2);
+            box-shadow: 0 20px 50px rgba(0, 255, 157, 0.1);
+        }
+        
+        /* Footer */
+        footer {
+            background: rgba(15, 20, 15, 0.95);
+            padding: 80px 0 40px;
+            border-top: 2px solid rgba(0, 255, 157, 0.25);
+            position: relative;
+            margin-top: 60px;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 50px;
+            margin-bottom: 50px;
+        }
+        
+        .footer-section {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .footer-title {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+        
+        .footer-links {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+        
+        .footer-links a {
+            color: var(--text-gray);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-size: 1.05rem;
+        }
+        
+        .footer-links a:hover {
+            color: var(--neon-green);
+        }
+        
+        .social-icons {
+            display: flex;
+            gap: 20px;
+            margin-top: 25px;
+        }
+        
+        .social-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: rgba(30, 40, 30, 0.8);
+            border-radius: 50%;
+            color: var(--text-light);
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            border: 1px solid rgba(0, 255, 157, 0.1);
+        }
+        
+        .social-icon:hover {
+            background: var(--gradient-primary);
+            color: #000;
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 10px 20px rgba(0, 255, 157, 0.3);
+        }
+        
+        .copyright {
+            text-align: center;
+            color: var(--text-gray);
+            padding-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Mobile Navigation */
+        .mobile-menu-btn {
+            display: none;
+            background: transparent;
+            border: none;
+            color: var(--neon-green);
+            font-size: 1.8rem;
+            cursor: pointer;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            h1 {
+                font-size: 3.2rem;
+            }
+            
+            .section-title {
+                font-size: 2.5rem;
+            }
+            
+            .nav-links {
+                gap: 25px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .nav-links {
+                position: fixed;
+                top: 80px;
+                left: 0;
+                width: 100%;
+                background: rgba(20, 25, 20, 0.95);
+                backdrop-filter: blur(15px);
+                flex-direction: column;
+                padding: 30px;
+                gap: 25px;
+                transform: translateY(-100%);
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.4s ease;
+                border-bottom: 2px solid rgba(0, 255, 157, 0.2);
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            }
+            
+            .nav-links.active {
+                transform: translateY(0);
+                opacity: 1;
+                visibility: visible;
+            }
+            
+            h1 {
+                font-size: 2.8rem;
+            }
+            
+            .section-title {
+                font-size: 2.2rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 60px;
+            }
+            
+            .header-text, .header-image {
+                width: 100%;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+        
+        /* Animation Classes */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-bolt"></i>
+                <span>System Guardian</span>
+            </div>
+            
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <div class="nav-links" id="navLinks">
+                <a href="#home" class="active toNeon">Home</a>
+                <a href="#features" class="toNeon">Features</a>
+                <a href="#installation" class="toNeon">Installation</a>
+                <a href="#info" class="toNeon">Information</a>
+                <a href="https://github.com/tenyokj/Battery-System-Guardian-.git" target="_blank" class="toNeon">GitHub</a>
+                <a href="#download" class="download-btn">Download Now</a>
+                <a href="./donate.html" class="donate-btn">Donate</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <header id="home">
+        <div class="header-bg"></div>
+        <div class="container">
+            <div class="header-content">
+                <div class="header-text fade-in">
+                    <span class="tag">🔋 Lightweight macOS Tray Utility</span>
+                    <h1>Monitor what's happening on your computer even easier.</h1>
+                    <p class="subtitle">A lightweight macOS tray utility that monitors your battery, CPU, memory, disk, and network activity - all in one clean popup window.</p>
+                    
+                    <div class="cta-buttons">
+                        <a href="#download" class="download-btn">Download Now</a>
+                        <a href="#features" class="secondary-btn">
+                            Explore Features <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="header-image fade-in">
+                    <div class="screenshot-frame">
+                        <div class="floating-icons">
+                            <div class="floating-icon"><i class="fas fa-microchip"></i></div>
+                            <div class="floating-icon"><i class="fas fa-battery-full"></i></div>
+                            <div class="floating-icon"><i class="fas fa-wifi"></i></div>
+                        </div>
+                        <img src="./assets/exampleofWork.png" alt="Battery & System Guardian Screenshot" class="app-screenshot">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section with lighter background -->
+    <section id="features" class="light-section">
+        <div class="container">
+            <h2 class="section-title fade-in">✨ Everything You Need to Monitor</h2>
+            <p class="section-subtitle fade-in">Battery & System Guardian provides comprehensive system monitoring in a clean, intuitive interface with real-time stats and notifications.</p>
+            
+            <div class="features-grid">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon"><i class="fas fa-brain"></i></div>
+                    <h3 class="feature-title">CPU Monitoring</h3>
+                    <p class="feature-desc">Real-time CPU usage, temperature, and status with detailed performance graphs and per-core statistics.</p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon"><i class="fas fa-memory"></i></div>
+                    <h3 class="feature-title">Memory Overview</h3>
+                    <p class="feature-desc">Monitor RAM usage, swap, and memory pressure with visual indicators to keep your system running smoothly.</p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon"><i class="fas fa-hdd"></i></div>
+                    <h3 class="feature-title">Disk Activity</h3>
+                    <p class="feature-desc">Track disk layout, I/O activity, read/write speeds, and storage usage across all your drives in real-time.</p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon"><i class="fas fa-wifi"></i></div>
+                    <h3 class="feature-title">Network Stats</h3>
+                    <p class="feature-desc">Real-time upload/download speeds, data usage, network interface statistics and connection monitoring.</p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon"><i class="fas fa-battery-full"></i></div>
+                    <h3 class="feature-title">Battery Guardian</h3>
+                    <p class="feature-desc">Battery charge notifications, health monitoring, time remaining estimates to extend your battery life.</p>
+                </div>
+                
+                <div class="feature-card fade-in">
+                    <div class="feature-icon"><i class="fas fa-users"></i></div>
+                    <h3 class="feature-title">System Overview</h3>
+                    <p class="feature-desc">Active users, uptime tracker, GPU load, resolution info, local system time, and timezone information.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="installation">
+        <div class="container">
+            <h2 class="section-title fade-in">⚡ Quick & Easy Installation</h2>
+            <p class="section-subtitle fade-in">Get started with Battery & System Guardian in just a few simple steps. Download, install, and start monitoring in under 2 minutes.</p>
+            
+            <div class="installation-steps">
+                <div class="step fade-in">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Download the App</h3>
+                    
+                    <div class="code-block">
+                        <code># Download now<br> # Click the "Download Now" button on the website </code>
+                    </div>
+
+                    <p style="margin-top: 20px; ">Or download the latest .dmg or .zip file from the GitHub Releases page for your macOS version.</p>
+
+                    <!-- <p></p> -->
+                    <div class="code-block">
+                        <code># Download from GitHub Releases<br># Visit: https://github.com/Tenyokj/Battery-System-Guardian-/releases/tag/v.1.0.0</code>
+                    </div>
+               
+                </div>
+                
+                <div class="step fade-in">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Install to Applications</h3>
+                    <p>Unzip the downloaded file and drag "Battery & System Guardian.app" to your Applications folder.</p>
+                    <div class="code-block">
+                        <code># Move to Applications folder<br>mv ~/Downloads/"Battery & System Guardian.app" /Applications/</code>
+                    </div>
+                </div>
+                
+                <div class="step fade-in">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">Fix Permission Issues</h3>
+                    <p>If macOS marks the app as untrusted (Gatekeeper), run this command in Terminal:</p>
+                    <div class="code-block">
+                        <code># Fix app permissions<br>xattr -cr "/Downloads/Battery & System Guardian.app"</code>
+                    </div>
+                    <p style="margin-top: 20px; color: var(--neon-green);">Or if you've moved it to Applications:</p>
+                    <div class="code-block">
+                        <code>xattr -cr "/Applications/Battery & System Guardian.app"</code>
+                    </div>
+                </div>
+                
+                <div class="step fade-in">
+                    <div class="step-number">4</div>
+                    <h3 class="step-title">Launch and Monitor</h3>
+                    <p>Launch the app from your Applications folder — it will appear as a small icon in your macOS menu bar. Click to view all system stats!</p>
+                    <div class="code-block">
+                        <code># Open from Terminal (optional)<br>open /Applications/"Battery & System Guardian.app"</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Information Section with lighter background -->
+    <section id="info" class="light-section">
+        <div class="container">
+            <h2 class="section-title fade-in">🚀 Advanced Information</h2>
+            <p class="section-subtitle fade-in">Everything developers and power users need to know about Battery & System Guardian architecture and capabilities.</p>
+            
+            <div class="stats-container">
+                <div class="stat-card fade-in">
+                    <div class="stat-number">9+</div>
+                    <div class="stat-label">System Metrics</div>
+                </div>
+                
+                <div class="stat-card fade-in">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Open Source</div>
+                </div>
+                
+                <div class="stat-card fade-in">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">Core Technologies</div>
+                </div>
+                
+                <div class="stat-card fade-in">
+                    <div class="stat-number">MIT</div>
+                    <div class="stat-label">License</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 100px;">
+                <div class="step fade-in">
+                    <h3 class="step-title">Development & Build</h3>
+                    <p>Built with modern technologies for maximum performance, reliability, and a native macOS experience.</p>
+                    <div class="code-block">
+                        <code># Clone the repository<br>git clone https://github.com/tenyokj/Battery-System-Guardian-.git<br>cd battery-guardian<br><br># Install dependencies<br>npm install<br><br># Run in development mode<br>npm start<br><br># Build as macOS App<br>npm run make</code>
+                    </div>
+                    <p style="margin-top: 25px;">The built files will appear inside the <span class="code-font">out/make/</span> folder as both .app and .dmg installer.</p>
+                </div>
+                
+                <div class="step fade-in" style="margin-top: 35px;">
+                    <h3 class="step-title">macOS Permissions</h3>
+                    <p>To enable full monitoring capabilities including process and active window tracking, grant these permissions:</p>
+                    <p style="margin-top: 20px; padding: 20px; background: rgba(0, 255, 157, 0.05); border-radius: 15px; border-left: 4px solid var(--neon-green);">
+                        <strong>System Settings → Privacy & Security → Accessibility → Battery Guardian</strong>
+                    </p>
+                </div>
+                
+                <div class="step fade-in" style="margin-top: 35px;">
+                    <h3 class="step-title">Distribution & Updates</h3>
+                    <p>You can distribute the app in two ways. Automatic update notifications are built-in for new releases.</p>
+                    <ul style="margin-top: 20px; margin-left: 25px; color: var(--text-gray); font-size: 1.1rem;">
+                        <li style="margin-bottom: 10px;"><strong>ZIP file:</strong> Share Battery & System Guardian.zip directly</li>
+                        <li><strong>DMG installer:</strong> Professional installer with drag-and-drop setup</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download">
+        <div class="container">
+            <div class="download-section fade-in">
+                <h2 class="section-title">Ready to Monitor Your System?</h2>
+                <p style="font-size: 1.3rem; margin: 25px 0 50px; color: var(--text-gray); max-width: 700px; margin-left: auto; margin-right: auto;">Download Battery & System Guardian today and take complete control of your Mac's performance, battery life, and system health.</p>
+                <a href="./Battery.System.Guardian-1.0.0-arm64.dmg" download class="download-btn" style="font-size: 1.3rem; padding: 18px 50px;"  id="download-btn">
+                    <i class="fas fa-download"></i> Download Latest Release
+                </a>
+                <p style="margin-top: 40px; color: var(--neon-green); font-weight: 600; font-size: 1.1rem;">Available for macOS 10.13+ • Intel & Apple Silicon</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3 class="footer-title">Battery & System Guardian</h3>
+                    <p style="margin-top: 15px; color: var(--text-gray);">A lightweight macOS tray utility that monitors your battery, CPU, memory, disk, and network activity in one clean interface.</p>
+                    <div class="social-icons">
+                        <a href="https://github.com/tenyokj/Battery-System-Guardian-.git" class="social-icon" target="_blank" title="GitHub">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="https://tenyokj.github.io/web3-studio/" class="social-icon" title="Web3 Studio" target="_blank">
+                            <i class="fab">W3</i>
+                        </a>
+                        <a href="https://t.me/ITheme_bot" class="social-icon" title="Telegram" target="_blank">
+                            <i class="fab fa-telegram"></i>
+                        </a>
+                        <a href="mailto:av7794257@gmail.com" class="social-icon" title="Email" target="_blank">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 class="footer-title">Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="#home"><i class="fas fa-chevron-right" style="color: var(--neon-green); margin-right: 8px;"></i> Home</a></li>
+                        <li><a href="#features"><i class="fas fa-chevron-right" style="color: var(--neon-green); margin-right: 8px;"></i> Features</a></li>
+                        <li><a href="#installation"><i class="fas fa-chevron-right" style="color: var(--neon-green); margin-right: 8px;"></i> Installation</a></li>
+                        <li><a href="#info"><i class="fas fa-chevron-right" style="color: var(--neon-green); margin-right: 8px;"></i> Information</a></li>
+                        <li><a href="https://github.com/tenyokj/Battery-System-Guardian-.git" target="_blank"><i class="fas fa-chevron-right" style="color: var(--neon-green); margin-right: 8px;"></i> GitHub Repo</a></li>
+                        <li><a href="#download"><i class="fas fa-chevron-right" style="color: var(--neon-green); margin-right: 8px;"></i> Download</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 class="footer-title">Technologies</h3>
+                    <ul class="footer-links">
+                        <li><i class="fas fa-cube" style="color: var(--neon-green); margin-right: 10px;"></i> Electron</li>
+                        <li><i class="fas fa-chart-line" style="color: var(--neon-green); margin-right: 10px;"></i> Systeminformation</li>
+                        <li><i class="fas fa-bell" style="color: var(--neon-green); margin-right: 10px;"></i> Node Notifier</li>
+                        <li><i class="fas fa-list" style="color: var(--neon-green); margin-right: 10px;"></i> PS-List</li>
+                        <li><i class="fab fa-node-js" style="color: var(--neon-green); margin-right: 10px;"></i> Node.js</li>
+                        <li><i class="fab fa-apple" style="color: var(--neon-green); margin-right: 10px;"></i> macOS Native</li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 class="footer-title">Author & License</h3>
+                    <p><i class="fas fa-user" style="color: var(--neon-green); margin-right: 10px;"></i> Tenyokj</p>
+                    <p><i class="fab fa-github" style="color: var(--neon-green); margin-right: 10px;"></i> <a href="https://github.com/tenyokj" target="_blank" style="color: var(--text-gray); text-decoration: none;">github.com/tenyokj</a></p>
+                    <p style="margin-top: 20px;"><i class="fas fa-file-contract" style="color: var(--neon-green); margin-right: 10px;"></i> Licensed under MIT License</p>
+                    <p style="margin-top: 25px; padding: 15px; background: rgba(0, 255, 157, 0.05); border-radius: 10px; border-left: 3px solid var(--neon-green);">
+                        <i class="fas fa-heart" style="color: var(--neon-green); margin-right: 8px;"></i> 
+                        Free to use, modify, and share
+                    </p>
+                    <a href="./donate.html" class="donate-btn" style="margin: 20px 0;">Donate</a>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                <p>&copy; 2023 Battery & System Guardian. All rights reserved. | Designed with <i class="fas fa-heart" style="color: #ff0066;"></i> for macOS users worldwide</p>
+                <p style="margin-top: 10px; font-size: 0.9rem; color: #888;">macOS is a trademark of Apple Inc. This is an independent utility not affiliated with Apple.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            document.getElementById('navLinks').classList.toggle('active');
+            this.innerHTML = document.getElementById('navLinks').classList.contains('active') 
+                ? '<i class="fas fa-times"></i>' 
+                : '<i class="fas fa-bars"></i>';
+        });
+
+        // Close mobile menu when clicking a link
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    document.getElementById('navLinks').classList.remove('active');
+                    document.getElementById('mobileMenuBtn').innerHTML = '<i class="fas fa-bars"></i>';
+                }
+            });
+        });
+
+        // Scroll animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const fadeElements = document.querySelectorAll('.fade-in');
+            
+            const fadeInOnScroll = function() {
+                fadeElements.forEach(element => {
+                    const elementTop = element.getBoundingClientRect().top;
+                    const elementVisible = 150;
+                    
+                    if (elementTop < window.innerHeight - elementVisible) {
+                        element.classList.add('visible');
+                    }
+                });
+            };
+            
+            // Check on load
+            fadeInOnScroll();
+            
+            // Check on scroll
+            window.addEventListener('scroll', fadeInOnScroll);
+            
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 100,
+                            behavior: 'smooth'
+                        });
+                        
+                        // Update active nav link
+                        document.querySelectorAll('.nav-links a').forEach(link => {
+                            link.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                    }
+                });
+            });
+            
+            // Highlight effect for feature cards on hover
+            const featureCards = document.querySelectorAll('.feature-card');
+            featureCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.classList.add('active');
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.classList.remove('active');
+                });
+            });
+            
+            // Animate stats counter
+            const statNumbers = document.querySelectorAll('.stat-number');
+            const observerOptions = {
+                threshold: 0.5
+            };
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const statNumber = entry.target;
+                        const targetValue = statNumber.textContent;
+                        
+                        // Remove non-numeric characters
+                        const numericValue = targetValue.replace(/\D/g, '');
+                        
+                        if (numericValue) {
+                            animateCounter(statNumber, parseInt(numericValue));
+                        }
+                        
+                        observer.unobserve(statNumber);
+                    }
+                });
+            }, observerOptions);
+            
+            statNumbers.forEach(stat => observer.observe(stat));
+            
+            function animateCounter(element, target) {
+                let current = 0;
+                const increment = target / 50;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    
+                    // Format based on content
+                    if (element.textContent.includes('+')) {
+                        element.textContent = Math.floor(current) + '+';
+                    } else if (element.textContent === 'MIT') {
+                        element.textContent = 'MIT';
+                        clearInterval(timer);
+                    } else if (element.textContent === '100%') {
+                        element.textContent = '100%';
+                        clearInterval(timer);
+                    } else {
+                        element.textContent = Math.floor(current);
+                    }
+                }, 30);
+            }
+        });
+
+        // document.getElementById("download-btn").addEventListener("click", function() {
+        //     // Путь к файлу
+        //     const fileUrl = "file.dmg";
+
+        //     // Исправить загрузку файла!! Пишет что поврежден!
+            
+        //     // Создаем временный элемент <a>
+        //     const a = document.createElement("a");
+        //     a.href = fileUrl;
+        //     a.download = "file.dmg"; // Имя файла при скачивании
+        //     document.body.appendChild(a);
+        //     a.click(); // Имитируем клик
+        //     document.body.removeChild(a);
+        // });
+    </script>
+</body>
+</html>
